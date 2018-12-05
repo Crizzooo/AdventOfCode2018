@@ -2,11 +2,9 @@ import os
 from pprint import pprint
 from functools import reduce
 
-
 def calculate_frequencies():
-    total = 0
     commands = get_file_lines()
-    # process commands
+    # process each command
     return reduce(reduce_total, commands, 0)
 
 def reduce_total(total, command):
