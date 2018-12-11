@@ -54,11 +54,9 @@ class Node:
             return sum(self.metadata)
         # else the node should use its metadata as indexes of its children
         # and if a child node exists at that index, it should aggregate the indexes
-        for index in self.metadata:
+        for child in [self.children[index] for index in self.metadata if index < len(self.children)]:
             # for each metadata, if child node exists at that index - get its child's value
-            if index < len(self.children):
-                child = self.children[index]
-                value +=  child.get_node_value()
+            value +=  child.get_node_value()
         return value
 
 
