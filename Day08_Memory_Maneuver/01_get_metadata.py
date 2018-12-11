@@ -1,5 +1,7 @@
 import os
 from pprint import pprint
+# from itertools import accumulate
+from functools import reduce
 
 # rather than recurse through our tree after creation
 # we can store metadata  in our global list, and sum this up later 
@@ -14,7 +16,8 @@ def get_meta_data(input):
     # pprint(all_metadata)
 
     metadata_sum = reduce( (lambda total_sum, curr: total_sum + curr), all_metadata )
-    return metadata_sum
+    # return metadata_sum
+    return start_node.get_node_value()
     # starting with the start_node, go through all children and get their sums
 
 
@@ -24,7 +27,7 @@ class Node:
     total_nodes = 0
 
     def __init__(self, data):
-        self.children = []
+        self.children = [ None ]
         self.metadata = []
         self.child_count = int(data.pop(0))
         self.metadata_count = int(data.pop(0))
@@ -38,6 +41,12 @@ class Node:
             self.process_remaining_nodes(data)
         # print ("Done with node", self.node_id)
         # print(self)
+        # TODO: Calculate 'value' of this node 
+            # go get the value of all children
+                # metadata is reference to index of where the child is
+                # so plug in the metadata - 1 to children array to find its child
+                # or we can initiate children array with None 
+                # if a node has no children, its value is the sum of its metadata
         pass
     
     def __str__(self):
@@ -46,10 +55,10 @@ class Node:
     def process_remaining_nodes(self, data):
         global all_metadata
         # while there is a child count, process the child 
-        while len(self.children) < self.child_count and len(data):
+        while len(self.children) <= self.child_count and len(data):
             # print ('making child for node id: ', self.node_id)
             node = Node(data)
-            self.children.append(node.node_id)
+            self.children.append(node)
         # then update metadata
         while (len(self.metadata) < self.metadata_count):
             # print ('pre metadata removal', len(data))
@@ -57,8 +66,25 @@ class Node:
         #     print ('post metadata removal', len(data))
         # print ('found metadata for node: ', self.node_id)
         pprint(self.metadata)
+        pprint(self.children)
         all_metadata.extend(self.metadata)
         # print ('child length and children', self.child_count, len(self.children))
+    def get_node_value(self):
+        value = 0
+        # found_child = False
+        if (len(self.children) == 1):
+            return sum(self.metadata)
+        # loop through metadata
+        for index in self.metadata:
+            # for each metadata, if child node exists at that index
+            if index < len(self.children):
+                child = self.children[index]
+                # found_child = True 
+                # aggregate its value
+                print('getting node value of child', child.node_id)
+                value = value +  child.get_node_value()
+        return value
+
 
 def get_file_lines():
     file_name = os.path.join(os.getcwd(), 'input.txt')
