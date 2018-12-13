@@ -3,87 +3,11 @@ import re
 from pprint import pprint
 from datetime import datetime
 
-# Problem 1 - determine which guard sleeps the most and which minute he is asleep the most
-#              return guardID * minute he sleeps the most
+FALL_ASLEEP = "FALL ASLEEP"
+WAKE_UP = "WAKES UP"
+BEGIN_SHIFT = "BEGIN SHIFT"
 
-# Problem 2 - 
-
-# analyze the guard logs and create hash table of month-day -> array of midnight minutes
-def analyze_guard_logs(logs): 
-    # convert each log in to a class that holds the date and action 
-    logs = map( lambda log: Log(log), logs )
-    # sort the logs in oldest to newest date order
-    logs.sort(key = lambda log: log.date)
-    pprint(map(lambda log: log.date, logs))
-
-    # process the logs and create a hash table by the month date year combo with an array of all the minutes for the midnight hour
-    # for each log
-        # if start of new shift create entry in hash table 
-
-        # else if guard falling asleep, set the time of falling asleep
-
-        # if waking up, go fill in the hash table from minute he fell asleep up to minute he woke up
-
-
-class Log:
-
-    log_pattern = re.compile('(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}).\s(.*)')
-    # log_pattern = re.compile('Guard')
-
-    def __init__(self, log):
-        matches = Log.log_pattern.search(log)
-        if matches is not None:
-            date_pieces = matches.groups()[:5]
-            # get pieces of date as int to create a date
-            self.year, self.month, self.day, self.hour, self.minute = map(int, date_pieces)
-            self.date = datetime(self.year, self.month, self.day, self.hour, self.minute)
-            # string description of the guard action
-            self.action = matches.groups()[-1]
-            self.action_type = self.assign_action(self.action)
-        else:
-            raise Exception('Could not parse data')
-    
-    def is_new_shift(log):
-        pass
-
-    def assign_action(self, log_action):
-        # if matches Guard (#) begins shift 
-
-        new_guard_match = re.search("Guard #(\d*) begins shift", log_action)
-        if (new_guard_match):
-            # assign guard id, assign type of 'BEGIN'
-            print ('BEGIN SHIFT', new_guard_match.group(1))
-            return
-
-        asleep_match = re.search("falls asleep", log_action)
-        if (asleep_match):
-            print ('FALL ASLEEP')
-            return
-        
-        wake_match = re.search("wakes up", log_action)
-        if (wake_match):
-            print ("WAKES UP")
-            return 
-
-        raise Exception('Could not assign a type to log!', log_action)
-        # if matches falls asleep
-            # assign type of 'START SLEEP'
-        # if matches wakes up
-            # assign type of 'WAKE UP'
-        
-
-def find_guard_and_minute():
-    pass
-
-def get_file_lines():
-    file_name = os.path.join(os.getcwd(), 'input.txt')
-    file = open(file_name, "r")
-    lines = file.read().splitlines()
-    return lines
-
-if __name__ == "__main__":
-    input = get_file_lines()
-    test_input = """[1518-11-01 00:00] Guard #10 begins shift
+test_input = """[1518-11-01 00:00] Guard #10 begins shift
 [1518-11-01 00:05] falls asleep
 [1518-11-01 00:25] wakes up
 [1518-11-01 00:30] falls asleep
@@ -100,6 +24,140 @@ if __name__ == "__main__":
 [1518-11-03 00:29] wakes up
 [1518-11-05 00:45] falls asleep
 [1518-11-05 00:55] wakes up"""
+
+# Problem 1 - determine which guard sleeps the most and which minute he is asleep the most
+#              return guardID * minute he sleeps the most
+
+# Problem 2 - 
+
+# analyze the guard logs and create hash table of month-day -> array of midnight minutes
+def create_guard_schedule(logs): 
+    # convert each log in to a class that holds the date and action
+    logs = map(lambda log: Log(log), logs )
+    # print('hi')
+    # sort the logs in oldest to newest date order
+    logs.sort(key=lambda log: log.date)
+    # pprint(map(lambda log: log.action, logs))
+    schedule = {}
+
+    # process the logs and create a hash table by the month date year combo with an array of all the minutes for the midnight hour
+    # for each log
+    current_guard = None
+    min_asleep = None
+
+    for log in logs:
+        date = log.date_code
+        # if we havent seen this day before
+        if date not in schedule:
+            # print('creating minute log for date: ', date)
+            schedule[date] = {
+                "minutes": create_minute_log(),
+                "guard_id": None
+            }
+    
+        
+        # update the current guard if beginning shift 
+        if (log.action_type == BEGIN_SHIFT):
+            current_guard = log.guard_id
+            # print('new guard clocking in ' + str(current_guard))
+
+        # else if guard falling asleep, set the time of falling asleep
+        # guards can only fall asleep on their own day, so lets set guard id of the day the first time the guard falls asleep
+        if (log.action_type == FALL_ASLEEP):
+            min_asleep = log.minute
+            if (schedule[date]['guard_id']is None):
+                schedule[date]['guard_id']= current_guard
+            # print ('Current Guard ' + str(current_guard) + ' falls asleep at ' + str(min_asleep))
+
+        # if waking up, go fill in the hash table between the minute he fell asleep up to minute he woke up
+        if (log.action_type == WAKE_UP):
+            wake_up_minute = log.minute
+            # print ('Current Guard ' + str(current_guard) + ' wakes up at ' + str(min_asleep))
+            for minute in range(min_asleep, wake_up_minute):
+                schedule[date]['minutes'][minute] = '#'
+            min_asleep = None
+
+    return schedule
+
+    def handle_begin_shift(log):
+        pass 
+
+    def handle_fall_asleep(log):
+        pass
+    
+    def handle_wake_up(log):
+        pass
+
+
+def analyze_guard_schedule(schedule):
+    pass
+
+
+class Log:
+
+    log_pattern = re.compile('(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}).\s(.*)')
+    guard_id_pattern = re.compile('Guard\s#(\d*)\s')
+    # log_pattern = re.compile('Guard')
+
+    def __init__(self, log):
+        matches = Log.log_pattern.search(log)
+        if matches is not None:
+            date_pieces = matches.groups()[:5]
+            # combine YYYY-MM-DD to set a date code used for hashing
+            self.date_code = "-".join(matches.groups()[:3])
+            # get pieces of date as int to create a date
+            self.year, self.month, self.day, self.hour, self.minute = map(int, date_pieces)
+            self.date = datetime(self.year, self.month, self.day, self.hour, self.minute)
+            # string description of the guard action
+            self.action = matches.groups()[-1]
+            self.guard_id = None
+            self.action_type = self.get_action_type()
+        else:
+            raise Exception('Could not parse data')
+
+        if (self.action_type == BEGIN_SHIFT):
+            self.guard_id = Log.guard_id_pattern.match(self.action).group(1)
+
+    
+    def get_action_type(self):
+        # if matches Guard (#) begins shift 
+        log_action = self.action;
+
+        new_guard_match = re.search("Guard #(\d*) begins shift", log_action)
+        if (new_guard_match):
+            # assign guard id, assign type of 'BEGIN'
+            return BEGIN_SHIFT
+
+        asleep_match = re.search("falls asleep", log_action)
+        if (asleep_match):
+            return FALL_ASLEEP
+        
+        wake_match = re.search("wakes up", log_action)
+        if (wake_match):
+            return WAKE_UP
+
+        raise Exception('Could not assign a type to log!', log_action)
+
+
+
+def find_guard_and_minute():
+    pass
+
+def get_file_lines():
+    file_name = os.path.join(os.getcwd(), 'input.txt')
+    file = open(file_name, "r")
+    lines = file.read().splitlines()
+    return lines
+
+def create_minute_log():
+    minutes = []
+    for i in range(0, 60):
+        minutes.append('')
+    return minutes
+
+if __name__ == "__main__":
+    input = get_file_lines()
     test_input = test_input.split('\n')
-    # input = test_input
-    print ('Result: ', analyze_guard_logs(input))
+    input = test_input
+    schedule = create_guard_schedule(input)
+    # pprint(schedule)
