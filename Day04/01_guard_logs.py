@@ -90,7 +90,48 @@ def create_guard_schedule(logs):
 
 
 def analyze_guard_schedule(schedule):
-    pass
+    # go through each day in schedule
+    guard_hash = {}
+
+    secret_code = 0
+    guard_most_asleep = ""
+    guard_frequent_minute = ""
+
+    for day in schedule:
+        day_obj = schedule[day]
+        guard = day_obj['guard_id']
+        minutes = day_obj['minutes']
+        if guard not in guard_hash:
+            guard_hash[guard] = {
+                "minutes_asleep": 0,
+                "minute_hash": create_minute_hash(),
+                "guard_id": guard
+            }
+        guard_stats = guard_hash[guard]
+        for minute, is_asleep in enumerate(minutes):
+            if is_asleep == '#':
+                guard_stats['minutes_asleep'] += 1
+                guard_stats['minute_hash'][minute] += 1
+        # go over the minutes for the day 
+            # if asleep add to minute
+            # add to guard minute hash
+    max_minutes_asleep = 0
+    guard_most_asleep  = ""
+    all_guard_stats = map( lambda guard_id: guard_hash[guard_id], guard_hash.keys() )
+    for guard_stat in all_guard_stats:
+        if (guard_stat['minutes_asleep'] > max_minutes_asleep):
+            guard_most_asleep = guard_stat['guard_id']
+
+    most_frequent_minute_total = -1
+    most_frequent_minute = -1
+    for minute in guard_hash[guard_most_asleep]['minute_hash'].keys():
+        asleep_count = guard_hash[guard_most_asleep]['minute_hash'][minute]
+        # print('minute: ', minute, ' asleep count', asleep_count)
+        if asleep_count > most_frequent_minute_total:
+            most_frequent_minute_total = asleep_count
+            most_frequent_minute = minute
+    secret_code = int(guard_most_asleep) * int(most_frequent_minute)
+    return secret_code
 
 
 class Log:
@@ -155,9 +196,18 @@ def create_minute_log():
         minutes.append('')
     return minutes
 
+def create_minute_hash():
+    minute_hash = {}
+    for minute, val in enumerate(create_minute_log()):
+        minute_hash[minute] = 0
+    return minute_hash
+
 if __name__ == "__main__":
     input = get_file_lines()
     test_input = test_input.split('\n')
-    input = test_input
+    # input = test_input
+    print ("making schedule")
     schedule = create_guard_schedule(input)
+    print ('made schedule')
+    print(analyze_guard_schedule(schedule))
     # pprint(schedule)
